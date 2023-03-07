@@ -1,16 +1,20 @@
 import React from "react";
 import { ItemActions } from "./ItemActions";
+import type { Note } from "../types";
 
-export const ListItem: React.FC = () => {
-    // todo: pass item id here
-    const id = "item-id";
+interface ListItemProps {
+    note: Note;
+}
+
+export const ListItem: React.FC<ListItemProps> = ({ note }) => {
+    const { city, date, favouriteDish, grades, id } = note;
     return (
         <tr data-test="list-item" data-id={id}>
-            <td data-test="list-item-city">Warsaw</td>
-            <td data-test="list-item-date">22/02/2022</td>
-            <td data-test="list-item-dish">Zurek</td>
-            <td data-test="list-item-grades">10, 7, 6.5, 8.3</td>
-            <td data-test="list-item-actions"><ItemActions /></td>
+            <td data-test="list-item-city">{city}</td>
+            <td data-test="list-item-date">{date}</td>
+            <td data-test="list-item-dish">{favouriteDish.name}</td>
+            <td data-test="list-item-grades">{grades.join(", ")}</td>
+            <td data-test="list-item-actions"><ItemActions id={id} /></td>
         </tr>
     );
 };

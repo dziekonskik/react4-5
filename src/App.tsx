@@ -5,9 +5,11 @@ import { LanguageSwitchButton } from "./lang/LanguageSwitchButton";
 import { SoundsContainer } from "./sound/SoundsContainer";
 import { NoteAddForm } from "./form/NoteAddForm";
 import { List } from "./list/List";
+import { useOverlay } from "./context/OverlayContext";
 
-// todo: get data on initial render
 export const App: React.FC = () => {
+    const { overlay } = useOverlay();
+
     return (
         <div className="container root-container">
             <div className="row header">
@@ -23,7 +25,7 @@ export const App: React.FC = () => {
                     <NoteAddForm />
                 </div>
             </div>
-            <LoadingOverlay isVisible={false} />
+            <LoadingOverlay isVisible={overlay} />
             <SoundsContainer />
         </div>
     );

@@ -1,14 +1,14 @@
-import React from "react";
+import React, { createContext, useState, useMemo, useCallback, useContext } from "react";
 import { Language } from "../types";
+import { TRANSLATIONS, TranslationKey } from "./translations";
 
-// the context interface
-// todo: hint: use this interface to represent the context and remove 'eslint-disable' on the next line
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface LanguageState {
     currentLanguage: Language;
     toggleLanguage: () => void;
     getTranslatedValue: (key: string) => string;
 }
+
+const LanguageContext = createContext<LanguageState | null>(null);
 
 interface LanguageProviderProps {
     children: React.ReactNode;
@@ -22,5 +22,26 @@ interface LanguageProviderProps {
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({
     children,
 }) => {
-    return <>{children}</>;
+    const [currentLanguage, setCurrentLanguage] = useState<Language>("en");
+
+    const toggleLanguage = useCallback(() => {
+        currentLanguage === "en" ? setCurrentLanguage("es") : setCurrentLanguage("en");
+    }, [currentLanguage]);
+
+    const getTranslatedValue = useCallback((key: TranslationKey) => TRANSLATIONS[currentLanguage][key], [currentLanguage]);
+
+    const langageContextValue = useMemo(() => ({ currentLanguage, toggleLanguage, getTranslatedValue }),
+        [currentLanguage, toggleLanguage, getTranslatedValue]);
+
+    return <LanguageContext.Provider value={langageContextValue}>{children}</LanguageContext.Provider>;
+};
+
+export const useTranslation = () => {
+    const lang = useContext(LanguageContext);
+
+    if (!lang) {
+        throw new Error("You forgot LanguageProvider!");
+    }
+
+    return lang;
 };

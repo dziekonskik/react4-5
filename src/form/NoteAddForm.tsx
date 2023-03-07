@@ -1,14 +1,50 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { GradesInput } from "./GradesInput";
+import { ButtonWithSound } from "../sound/ButtonWithSound";
 import { TranslateText } from "../lang/TranslateText";
+import { useNoteReducer } from "../context/NoteReducerContext";
+import { inputDisplayDate, hasErrors } from "../functions";
+import { useRequest } from "../network/useRequest";
+import { NetworkHandler } from "../network/NetworkHandler";
+import { useOverlay } from "../context/OverlayContext";
 
 import "./NoteAddForm.css";
 
-// todo: implement Note add form
-//  - The only validation you should apply for it is check for all non-empty inputs (except the optional `Notes about dish/city`)
-//  - Disable save button while request is pending
+import type { Note } from "../types";
+
 export const NoteAddForm: React.FC = () => {
-    const hasError = true;
+    const [editedNote, setEditedNote] = useState<Note>();
+    const { state, handleCity, handleDate, handleDishName, handleDishNote, handleGrades, handleReset } = useNoteReducer();
+    const { isLoading, makeRequest, response } =
+    useRequest<Note[]>(() => editedNote ? NetworkHandler.editNote(state) : NetworkHandler.addNote(state));
+    const notes = useRequest(() => NetworkHandler.getNotes());
+    const { city, favouriteDish, grades, date } = state;
+    const { overlay, setOverlay } = useOverlay();
+
+    useEffect(() => {
+        const responseError = response instanceof Error;
+        const successfulResponse = response && !responseError;
+
+        setOverlay(isLoading);
+
+        if (responseError) {
+            console.log("Request failed: and nothing else matters...");
+        }
+
+        if (successfulResponse) {
+            handleReset();
+        }
+    }, [response, handleReset, isLoading, setOverlay]);
+
+    useEffect(() => {
+        if (!notes.response || overlay) {
+            notes.makeRequest();
+        }
+        if (notes.response && !(notes.response instanceof Error)) {
+            const foundNote = notes.response.find(note => note.id === state.id);
+            setEditedNote(foundNote);
+        }
+    }, [notes, state.id, notes.response, overlay]);
 
     return (
         <div data-test="note-add-form">
@@ -23,6 +59,8 @@ export const NoteAddForm: React.FC = () => {
                 type="text"
                 placeholder="Kyiv"
                 id="city-name"
+                value={city}
+                onChange={handleCity}
             />
             <label htmlFor="city-name">
                 <TranslateText translationKey="form.label.favouriteDish" />
@@ -32,6 +70,8 @@ export const NoteAddForm: React.FC = () => {
                 type="text"
                 placeholder="Chicken Kyiv"
                 id="favourite-dish"
+                value={favouriteDish.name}
+                onChange={handleDishName}
             />
             <label htmlFor="note-field">
                 <TranslateText translationKey="form.label.notes" />
@@ -41,30 +81,39 @@ export const NoteAddForm: React.FC = () => {
                 style={{ resize: "vertical" }}
                 placeholder="Dear Slim, I wrote you but you still ain't callin'"
                 id="note-field"
+                value={favouriteDish.note}
+                onChange={handleDishNote}
             />
             <label htmlFor="grades-field">
                 <TranslateText translationKey="form.label.grades" />
             </label>
-            <GradesInput />
+            <GradesInput grades={grades} handleGrades={handleGrades} />
             <label htmlFor="visit-date">
                 <TranslateText translationKey="form.label.date" />
             </label>
-            {/* NOTE! date has to be *saved* in format `DD/MM/YYYY` */}
-            <input data-test="form-date" type="date" id="visit-date" />
+            <input
+                data-test="form-date"
+                type="date"
+                id="visit-date"
+                onChange={handleDate}
+                value={inputDisplayDate(date)}
+            />
             <div className="submit-button-container">
-                {hasError && (
+                {response instanceof Error && (
                     <div className="form-error" data-test="form-error">
                         <TranslateText translationKey="form.error" />
                     </div>
                 )}
-                <button
-                    data-test="form-save-button"
+                <ButtonWithSound
+                    dataTest="form-save-button"
                     className="button-primary disabled"
                     type="submit"
                     value="Save note"
-                >
-                    <TranslateText translationKey="form.button.save" />
-                </button>
+                    onClick={makeRequest}
+                    disabled={hasErrors(state) || isLoading}
+                    translationKey="form.button.save"
+                    soundType="positive"
+                />
             </div>
         </div>
     );

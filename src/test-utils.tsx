@@ -3,10 +3,11 @@ import React from "react";
 import { App } from "./App";
 import { Note } from "./types";
 import { setData } from "./network/noNetworkStorage";
+import { Providers } from "./context/Providers";
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const getApp = () => {
-    const { container, rerender } = render(<App />);
+    const { container, rerender } = render(<Providers><App /></Providers>);
 
     const getForm = () => within(container).getByTestId("note-add-form");
     const getItemByCity = (city: string) => {
@@ -25,7 +26,7 @@ export const getApp = () => {
     };
 
     return {
-        rerender: () => rerender(<App />),
+        rerender: () => rerender(<Providers><App /></Providers>),
         getForm: getForm,
         getCityInput: () => within(getForm()).getByTestId<HTMLInputElement>("form-city"),
         getDishInput: () => within(getForm()).getByTestId<HTMLInputElement>("form-dish"),
